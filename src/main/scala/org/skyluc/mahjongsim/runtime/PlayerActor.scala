@@ -13,7 +13,7 @@ class PlayerActor(position: Position) extends Actor {
 
   val rng = new scala.util.Random()
 
-  def receive = deal(PlayerView(Vector(), List()))
+  def receive = deal(PlayerView(Nil, List()))
   
   def deal(state: PlayerView): Receive = {
     case CommModel.Deal4(t1, t2, t3, t4) =>
@@ -52,7 +52,7 @@ object PlayerActor {
   }
   
   case class PlayerView(
-    tiles: Vector[Tile],
+    tiles: List[Tile],
     combinations: List[Combination]) {
 
     def toString(position: Position): String = {
