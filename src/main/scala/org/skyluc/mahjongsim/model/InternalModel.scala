@@ -253,6 +253,11 @@ $south
       }
     }
 
+    def simpleMahjong(position: Position, draw: Tile): GameState = {
+      // TODO: check valid move
+      this
+    }
+
     def nextDrawTile: Tile = {
       // TODO: check game not finished
       walls.nextDrawTile

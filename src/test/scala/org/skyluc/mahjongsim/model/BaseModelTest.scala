@@ -125,4 +125,23 @@ class BaseModelSpec extends FlatSpec {
       DotTile(2, 2)),
       Nil) == false)
   }
+
+  it should "not detect majhong in C33 B12 D53 C83 B24 D42 D83 C13 B93 B61 WS2 C73 RG1 +D11" in {
+    assert(isMahjong(List(
+      CharacterTile(3, 3),
+      BambooTile(1, 2),
+      DotTile(5, 3),
+      CharacterTile(8, 3),
+      BambooTile(2, 4),
+      DotTile(4, 2),
+      DotTile(8, 3),
+      CharacterTile(1, 3),
+      BambooTile(9, 3),
+      BambooTile(6, 1),
+      WindTile('S', 2),
+      CharacterTile(7, 3),
+      DragonTile('G', 1),
+      DotTile(1, 1)),
+      Nil) == false)
+  }
 }

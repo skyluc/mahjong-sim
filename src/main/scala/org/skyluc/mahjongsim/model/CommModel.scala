@@ -9,5 +9,6 @@ object CommModel {
 
   case class Draw(t: Tile)
   case class Discard(t: Tile)
+  case object Mahjong
 
 }

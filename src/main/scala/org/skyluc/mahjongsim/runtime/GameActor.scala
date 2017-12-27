@@ -6,6 +6,7 @@ import org.skyluc.mahjongsim.model.InternalModel._
 import org.skyluc.mahjongsim.model.CommModel
 import org.skyluc.mahjongsim.model.BaseModel._
 
+// TODO: stealing for Mahjong
 
 class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: ActorRef) extends Actor {
   import GameActor._
@@ -92,6 +93,13 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
   def waitForDrawResponse(state: GameState, player: Player, draw: Tile): Receive = {
     case CommModel.Discard(discard) =>
       become(nextDraw(state.simpleDraw(player.position, draw, discard), player))
+    case CommModel.Mahjong =>
+      println(s"Mahjong ${player.position} +$draw")
+      become(debug(state.simpleMahjong(player.position, draw)) {
+        case Nil =>
+          // should not reach here
+      })
+      system.terminate
       
   }
 
