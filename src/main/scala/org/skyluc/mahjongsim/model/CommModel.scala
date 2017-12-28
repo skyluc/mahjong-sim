@@ -7,8 +7,15 @@ object CommModel {
   case class Deal4(t1: Tile, t2: Tile, t3: Tile, t4: Tile)
   case class Deal1(t: Tile)
 
-  case class Draw(t: Tile)
-  case class Discard(t: Tile)
-  case object Mahjong
+  case class DrawTile(draw: Tile)
+  case class SimpleDraw(discard: Tile)
+  case class DrawKong(kong: Kong)
+
+  case class ReplacementTile(draw: Tile)
+  case class SimpleReplacement(discard: Tile)
+  case class ReplacementKong(kong: Kong)
+
+  case object DrawMahjong
+  case object ReplacementMahjong
 
 }

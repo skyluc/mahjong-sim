@@ -84,6 +84,10 @@ object InternalModel {
       )
     }
 
+    def nextReplacementTile: Tile = {
+      apply(nextReplacementIndex)
+    }
+
     def draw4(): Walls = {
       // TODO: check in right state ?
       copy(nextDrawIndex = nextDrawIndex.nextForward.nextForward.nextForward.nextForward)
@@ -100,6 +104,20 @@ object InternalModel {
           copy(nextDrawIndex = nextReplacementIndex)
         case _ =>
           copy(nextDrawIndex = nextDrawIndex.nextForward)
+      }
+    }
+
+    def replacementDraw(): Walls = {
+      // TODO: check more replacement
+      (nextDrawIndex, nextReplacementIndex) match {
+        case (StackTopIndex(i), StackTopIndex(j)) if (i == j) =>
+          copy(nextDrawIndex = nextDrawIndex.nextForward, nextReplacementIndex = nextReplacementIndex.nextBackward)
+        case (StackBottomIndex(i), StackBottomIndex(j)) if (i == j) =>
+          copy(moreDraw = false)
+        case (StackBottomIndex(i), StackBottomIndex(j)) if (i == j - 1 || j == 0 && i == 67) =>
+          copy(nextReplacementIndex = nextDrawIndex)
+        case _ =>
+          copy(nextReplacementIndex = nextReplacementIndex.nextBackward)
       }
     }
 
@@ -253,7 +271,38 @@ $south
       }
     }
 
-    def simpleMahjong(position: Position, draw: Tile): GameState = {
+    def drawKong(position: Position, draw: Tile, kong: Kong): GameState = {
+      copy(walls = walls.draw()).
+        updatePosition(position){h =>
+          h.copy(tiles = h.tiles :+ draw, combinations = h.combinations :+ kong)
+        }
+    }
+
+    def drawMahjong(position: Position, draw: Tile): GameState = {
+      // TODO: check valid move
+      this
+    }
+
+    def simpleReplacement(position: Position, replacement: Tile, discard: Tile): GameState = {
+      val t = copy(walls = walls.replacementDraw, lastDiscardedTile = Some(discard))
+      if (replacement == discard) {
+        t
+      } else {
+        t.updatePosition(position){ h =>
+          val discarded = h.tiles.filterNot(_ == discard)
+          h.copy(tiles = discarded :+ replacement)
+        }
+      }
+    }
+
+    def replacementKong(position: Position, replacement: Tile, kong: Kong): GameState = {
+      copy(walls = walls.replacementDraw()).
+        updatePosition(position){h =>
+          h.copy(tiles = h.tiles :+ replacement, combinations = h.combinations :+ kong)
+        }
+    }
+
+    def replacementMahjong(position: Position, replacement: Tile): GameState = {
       // TODO: check valid move
       this
     }
@@ -266,6 +315,11 @@ $south
     def nextDraw4Tiles: (Tile, Tile, Tile, Tile) = {
       // TODO: check game still in deal phase ?
       walls.nextDraw4Tiles
+    }
+
+    def nextReplacementTile: Tile = {
+      // TODO: check game not finished
+      walls.nextReplacementTile
     }
 
     def moreDraw: Boolean =

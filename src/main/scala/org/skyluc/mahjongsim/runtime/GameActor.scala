@@ -71,15 +71,15 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
 
   def startPlay(state: GameState): Receive = debug(state) {
     val draw = state.nextDrawTile
-    PlayerEast.actor ! CommModel.Draw(draw)
+    PlayerEast.actor ! CommModel.DrawTile(draw)
     waitForDrawResponse(state, PlayerEast, draw)
   }
 
   def nextDraw(state: GameState, player: Player): Receive = debug(state) {
-    if (state.moreDraw) { // TODO: need a done function
+    if (state.moreDraw) {
       val draw = state.nextDrawTile
       val nextPlayer = player.nextPlayer
-      nextPlayer.actor ! CommModel.Draw(draw)
+      nextPlayer.actor ! CommModel.DrawTile(draw)
       waitForDrawResponse(state, nextPlayer, draw)
     } else {
       system.terminate
@@ -91,16 +91,38 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
   }
 
   def waitForDrawResponse(state: GameState, player: Player, draw: Tile): Receive = {
-    case CommModel.Discard(discard) =>
+    case CommModel.SimpleDraw(discard) =>
       become(nextDraw(state.simpleDraw(player.position, draw, discard), player))
-    case CommModel.Mahjong =>
+    case CommModel.DrawKong(kong) =>
+      become(replacement(state.drawKong(player.position, draw, kong), player))
+    case CommModel.DrawMahjong =>
       println(s"Mahjong ${player.position} +$draw")
-      become(debug(state.simpleMahjong(player.position, draw)) {
+      become(debug(state.drawMahjong(player.position, draw)) {
         case Nil =>
           // should not reach here
       })
       system.terminate
-      
+  }
+
+  def replacement(state: GameState, player: Player): Receive = debug(state) {
+    // TODO: check end of game. Can you declare kong with no more tiles ?
+    val replacement = state.nextReplacementTile
+    player.actor ! CommModel.ReplacementTile(replacement)
+    waitForReplacementResponse(state, player, replacement)
+  }
+
+  def waitForReplacementResponse(state: GameState, player: Player, draw: Tile): Receive = {
+    case CommModel.SimpleReplacement(discard) =>
+      become(nextDraw(state.simpleReplacement(player.position, draw, discard), player))
+    case CommModel.ReplacementKong(kong) =>
+      become(replacement(state.replacementKong(player.position, draw, kong), player))
+    case CommModel.ReplacementMahjong =>
+      println(s"Mahjong ${player.position} +$draw")
+      become(debug(state.replacementMahjong(player.position, draw)) {
+        case Nil =>
+          // should not reach here
+      })
+      system.terminate
   }
 
   def play(state: GameState): Receive = {

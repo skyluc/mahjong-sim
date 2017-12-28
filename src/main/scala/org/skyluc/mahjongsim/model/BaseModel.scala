@@ -238,6 +238,21 @@ object BaseModel {
     }.to[List]
   }
 
+  def kongsNumbered(tiles: List[NumberedTile]): List[Kong] = {
+    val possible = tiles.combinations(4)
+    possible.flatMap{ c =>
+      val t1 = c.head
+      val t2 = c.tail.head
+      val t3 = c.tail.tail.head
+      val t4 = c.tail.tail.tail.head
+      if (t1.number == t2.number && t1.number == t3.number && t1.number == t4.number) {
+        Some(Kong(t1, t2, t3, t4))
+      } else {
+        None
+      }
+    }.to[List]   
+  }
+
   def kongsNamed(tiles: List[NamedTile]): List[Kong] = {
     val possible = tiles.combinations(4)
     possible.flatMap{ c =>
