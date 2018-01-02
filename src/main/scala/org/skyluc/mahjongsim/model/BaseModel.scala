@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 object BaseModel {
 
   // TODO: nextPosition might not be needed. To check
-  sealed abstract class Position(key: Char) {
+  sealed abstract class Position(val key: Char) {
     def nextPosition: Position
   }
   case object East extends Position('E') {
@@ -26,7 +26,7 @@ object BaseModel {
 
     def key: Char
 
-    protected def shortId: String
+    def shortId: String
 
     val id: String = s"$shortId$copy"
 
@@ -36,18 +36,18 @@ object BaseModel {
   case object NoTile extends Tile {
     override val copy = 0
     override val key = 'Z'
-    protected override val shortId = "  "
+    override val shortId = "  "
     override val id = "   "
   }
 
   trait NumberedTile extends Tile {
     def number: Int
-    protected override def shortId: String = s"$key$number"
+    override def shortId: String = s"$key$number"
   }
 
   trait NamedTile extends Tile {
     def name: Char
-    protected override def shortId: String = s"$key$name"
+    override def shortId: String = s"$key$name"
   }
 
   case class DotTile(override val number: Int, override val copy: Int) extends NumberedTile {
@@ -64,7 +64,7 @@ object BaseModel {
 
   case class DragonTile(override val name: Char, override val copy: Int) extends NamedTile {
     override def key = 'R'
- }
+  }
 
   case class WindTile(override val name: Char, override val copy: Int) extends NamedTile {
     override def key = 'W'
@@ -72,6 +72,9 @@ object BaseModel {
 
   trait Combination {
     def tiles: List[Tile]
+    lazy val id: String = tiles.mkString("-")
+    lazy val shortId: String = tiles.map(_.shortId).sorted.mkString("-")
+    override def toString() = id
   }
 
   case class Chow(t1: Tile, t2: Tile, t3: Tile) extends Combination {
@@ -218,6 +221,39 @@ object BaseModel {
         t3.number + 1 == t1.number && t3.number + 2 == t2.number ||
         t3.number + 1 == t2.number && t3.number + 2 == t1.number) {
         Some(Chow(t1, t2, t3))
+      } else {
+        None
+      }
+    }.to[List]
+  }
+
+  def chowsNumbered(tiles: List[NumberedTile]): List[Chow] = {
+    val possible = tiles.combinations(3)
+    possible.flatMap{ c =>
+      val t1 = c.head
+      val t2 = c.tail.head
+      val t3 = c.tail.tail.head
+      if (t1.number + 1 == t2.number && t1.number + 2 == t3.number ||
+        t1.number + 1 == t3.number && t1.number + 2 == t2.number ||
+        t2.number + 1 == t1.number && t2.number + 2 == t3.number ||
+        t2.number + 1 == t3.number && t2.number + 2 == t1.number ||
+        t3.number + 1 == t1.number && t3.number + 2 == t2.number ||
+        t3.number + 1 == t2.number && t3.number + 2 == t1.number) {
+        Some(Chow(t1, t2, t3))
+      } else {
+        None
+      }
+    }.to[List]
+  }
+
+  def pungsNumbered(tiles: List[NumberedTile]): List[Pung] = {
+    val possible = tiles.combinations(3)
+    possible.flatMap{ c =>
+      val t1 = c.head
+      val t2 = c.tail.head
+      val t3 = c.tail.tail.head
+      if (t1.number == t2.number && t1.number == t3.number) {
+        Some(Pung(t1, t2, t3))
       } else {
         None
       }

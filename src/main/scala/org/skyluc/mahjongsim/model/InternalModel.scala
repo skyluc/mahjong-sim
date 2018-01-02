@@ -307,6 +307,38 @@ $south
       this
     }
 
+    def discardMahjong(position: Position, replacement: Tile): GameState = {
+      // TODO: check valid move
+      this
+    }
+
+    def meldedChow(position: Position, claim: Tile, chow: Chow, discard: Tile): GameState = {
+      updatePosition(position){ h =>
+        h.copy(
+          tiles = h.tiles.filterNot(_ == discard) :+ claim,
+          combinations = h.combinations :+ chow
+        )
+      }
+    }
+
+    def meldedPung(position: Position, claim: Tile, pung: Pung, discard: Tile): GameState = {
+      updatePosition(position){ h =>
+        h.copy(
+          tiles = h.tiles.filterNot(_ == discard) :+ claim,
+          combinations = h.combinations :+ pung
+        )
+      }
+    }
+
+    def bigMeldedKong(position: Position, claim: Tile, kong: Kong): GameState = {
+      updatePosition(position){ h =>
+        h.copy(
+          tiles = h.tiles :+ claim,
+          combinations = h.combinations :+ kong
+        )
+      }
+    }
+
     def nextDrawTile: Tile = {
       // TODO: check game not finished
       walls.nextDrawTile

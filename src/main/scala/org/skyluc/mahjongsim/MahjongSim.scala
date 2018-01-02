@@ -17,7 +17,9 @@ object MahjongSim {
     val player3 = system.actorOf(runtime.PlayerActor.props(West))
     val player4 = system.actorOf(runtime.PlayerActor.props(North))
 
-    val game = system.actorOf(runtime.GameActor.props(player1, player2, player3, player4))
+    val recorder = system.actorOf(runtime.RecorderActor.props)
+
+    val game = system.actorOf(runtime.GameActor.props(player1, player2, player3, player4, recorder))
 
     game ! Start(shuffledTileSet, 3, 4, 5)
 

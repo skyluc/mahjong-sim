@@ -18,4 +18,15 @@ object CommModel {
   case object DrawMahjong
   case object ReplacementMahjong
 
+  case class Discarded(byPrevious: Boolean, discard: Tile)
+  case object NoClaim
+  case class MeldedPung(pung: Pung)
+  case class MeldedPungDiscard(discard: Tile)
+  case class MeldedChow(chow: Chow)
+  case class MeldedChowDiscard(discard: Tile)
+  case class BigMeldedKong(kong: Kong)
+  case object DiscardedMahjong
+  case object ClaimAccepted
+  case object ClaimRefused
+
 }
