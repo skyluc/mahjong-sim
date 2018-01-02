@@ -5,15 +5,16 @@ import akka.actor.{Actor, Props}
 // import org.skyluc.mahjongsim.model.PlayerModel._
 import org.skyluc.mahjongsim.model.BaseModel._
 import org.skyluc.mahjongsim.model.CommModel
+import org.skyluc.mahjongsim.log.Logger
 
 
-class PlayerActor(position: Position) extends Actor {
+class PlayerActor(position2: Position) extends Actor {
   import context._
   import PlayerActor._
 
   val rng = new scala.util.Random()
 
-  def receive = deal(PlayerView(Nil, List()))
+  def receive = deal(PlayerView(position2, Nil, List(), None))
   
   def deal(state: PlayerView): Receive = {
     case CommModel.Deal4(t1, t2, t3, t4) =>
@@ -24,12 +25,12 @@ class PlayerActor(position: Position) extends Actor {
       println("bad")
   }
 
-  def play(state: PlayerView): Receive = debug(state) {
+  def play(state: PlayerView): Receive = {
     case CommModel.DrawTile(draw) =>
       val all = state.tiles :+ draw
       if (isMahjong(all, state.combinations)) {
         sender ! CommModel.DrawMahjong
-        become(mahjong(state, draw))
+        become(mahjong(state.mahjong(draw)))
       } else {
         val moves = state.drawMoves(draw)
         moves(rng.nextInt(moves.length)) match {
@@ -63,12 +64,12 @@ class PlayerActor(position: Position) extends Actor {
       }
   }
 
-  def playReplacement(state: PlayerView): Receive = debug(state) {
+  def playReplacement(state: PlayerView): Receive = {
     case CommModel.ReplacementTile(replacement) =>
       val all = state.tiles :+ replacement
       if (isMahjong(all, state.combinations)) {
         sender ! CommModel.ReplacementMahjong
-        become(mahjong(state, replacement))
+        become(mahjong(state.mahjong(replacement)))
       } else {
         val moves = state.drawMoves(replacement)
         moves(rng.nextInt(moves.length)) match {
@@ -97,7 +98,7 @@ class PlayerActor(position: Position) extends Actor {
               sender ! CommModel.MeldedChowDiscard(discard)
               become(play(state.meldedChow(claim, chow, discard)))
             case DiscardMahjong =>
-              become(mahjong(state, claim))
+              become(mahjong(state.mahjong(claim)))
             case NoClaim =>
               become(play(state))      
         }
@@ -107,8 +108,7 @@ class PlayerActor(position: Position) extends Actor {
     r
   }
 
-  def mahjong(state: PlayerView, mahjongTile: Tile): Receive = {
-    println(state.toString(position, mahjongTile))
+  def mahjong(state: PlayerView): Receive = {
     val r: Receive = {
       case _ =>
       println(s"BAD!!! - I won the game")
@@ -116,66 +116,66 @@ class PlayerActor(position: Position) extends Actor {
     r
   }
 
-  private def debug(state: PlayerView)(r: Receive): Receive = {
-    println(state.toString(position))
-    r orElse {
-      case o =>
-        println(s"BAD!! - $o")
-    }
-  }
-
 }
 
 object PlayerActor {
+
+  def log(state: PlayerView): PlayerView = {
+    Logger.log(state)
+    state
+  }
   
   case class PlayerView(
+    position: Position,
     tiles: List[Tile],
-    combinations: List[Combination]) {
+    combinations: List[Combination],
+    mahjongTile: Option[Tile]) {
 
-    def toString(position: Position): String = {
+    override def toString(): String = {
       val cs = combinations.map {
         _.tiles.map(_.id).mkString("-")
       }.mkString(" ")
       val used = combinations.flatMap(_.tiles)
       val others = tiles.filterNot(used.contains(_)).mkString(" ")
-      s"Player $position\n$cs $others"
-    }
-
-    def toString(position: Position, mahjongTile: Tile): String = {
-      s"${toString(position)} +${mahjongTile.id}"
+      val plusTile = mahjongTile.map(t => s" +$t").getOrElse("")
+      s"Player $position\n$cs $others$plusTile"
     }
 
     def deal4(t1: Tile, t2: Tile, t3: Tile, t4: Tile): PlayerView = {
-      copy(tiles = tiles ++ List(t1, t2, t3, t4))
+      log(copy(tiles = tiles ++ List(t1, t2, t3, t4)))
     }
 
     def deal1(t: Tile): PlayerView = {
-      copy(tiles = tiles :+ t)
+      log(copy(tiles = tiles :+ t))
     }
 
     def simpleDraw(draw: Tile, discard: Tile): PlayerView = {
       if (draw == discard) {
-        this
+        log(this)
       } else {
-        copy(tiles = tiles.filterNot(_ == discard) :+ draw)
+        log(copy(tiles = tiles.filterNot(_ == discard) :+ draw))
       }
     }
 
     // TODO: find better name
     def simpleKong(draw: Tile, kong: Kong): PlayerView = {
-      copy(tiles = tiles :+ draw, combinations :+ kong)
+      log(copy(tiles = tiles :+ draw, combinations = combinations :+ kong))
     }
 
     def bigMeldedKong(claim: Tile, kong: Kong): PlayerView = {
-      copy(tiles = tiles :+ claim, combinations :+ kong)
+      log(copy(tiles = tiles :+ claim, combinations = combinations :+ kong))
     }
 
     def meldedPung(claim: Tile, pung: Pung, discard: Tile): PlayerView = {
-      copy(tiles = tiles.filterNot(_ == discard) :+ claim, combinations :+ pung)
+      log(copy(tiles = tiles.filterNot(_ == discard) :+ claim, combinations = combinations :+ pung))
     }
 
     def meldedChow(claim: Tile, chow: Chow, discard: Tile): PlayerView = {
-      copy(tiles = tiles.filterNot(_ == discard) :+ claim, combinations :+ chow)
+      log(copy(tiles = tiles.filterNot(_ == discard) :+ claim, combinations = combinations :+ chow))
+    }
+
+    def mahjong(tile: Tile): PlayerView = {
+      log(copy(mahjongTile = Some(tile)))
     }
 
     // TODO: find better name

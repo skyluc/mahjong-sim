@@ -9,6 +9,8 @@ object MahjongSim {
 
   def main(args: Array[String]) {
 
+    val rng = new scala.util.Random()
+
 
     val system = ActorSystem("majhong")
 
@@ -21,7 +23,7 @@ object MahjongSim {
 
     val game = system.actorOf(runtime.GameActor.props(player1, player2, player3, player4, recorder))
 
-    game ! Start(shuffledTileSet, 3, 4, 5)
+    game ! Start(shuffledTileSet, rng.nextInt(6), rng.nextInt(6), rng.nextInt(6))
 
     val lock = system.whenTerminated
 

@@ -1,6 +1,7 @@
 package org.skyluc.mahjongsim.model
 
 import org.skyluc.mahjongsim.model.BaseModel._
+import org.skyluc.mahjongsim.log.Logger
 
 object InternalModel {
 
@@ -245,98 +246,98 @@ $south
     def deal4(position: Position, tile1: Tile, tile2: Tile, tile3: Tile, tile4: Tile): GameState = { 
       // TODO: check valid move
       val t = copy(walls = walls.draw4())
-      t.updatePosition(position){ p =>
+      log(t.updatePosition(position){ p =>
         p.copy(tiles = p.tiles ++ List(tile1, tile2, tile3, tile4))
-      }
+      })
     }
 
     def deal1(position: Position, tile: Tile): GameState = {
       // TODO: check valid move
       val t = copy(walls = walls.draw())
-      t.updatePosition(position){ p =>
+      log(t.updatePosition(position){ p =>
         p.copy(tiles = p.tiles :+ tile)
-      }
+      })
     }
 
     def simpleDraw(position: Position, draw: Tile, discard: Tile): GameState = {
       // TODO: check valid move
       val t = copy(walls = walls.draw(), lastDiscardedTile = Some(discard))
       if (draw == discard) {
-        t
+        log(t)
       } else {
-        t.updatePosition(position){ h =>
+        log(t.updatePosition(position){ h =>
           val discarded = h.tiles.filterNot(_ == discard)
           h.copy(tiles = discarded :+ draw)
-        }
+        })
       }
     }
 
     def drawKong(position: Position, draw: Tile, kong: Kong): GameState = {
-      copy(walls = walls.draw()).
+      log(copy(walls = walls.draw()).
         updatePosition(position){h =>
           h.copy(tiles = h.tiles :+ draw, combinations = h.combinations :+ kong)
-        }
+        })
     }
 
     def drawMahjong(position: Position, draw: Tile): GameState = {
       // TODO: check valid move
-      this
+      log(this)
     }
 
     def simpleReplacement(position: Position, replacement: Tile, discard: Tile): GameState = {
       val t = copy(walls = walls.replacementDraw, lastDiscardedTile = Some(discard))
       if (replacement == discard) {
-        t
+        log(t)
       } else {
-        t.updatePosition(position){ h =>
+        log(t.updatePosition(position){ h =>
           val discarded = h.tiles.filterNot(_ == discard)
           h.copy(tiles = discarded :+ replacement)
-        }
+        })
       }
     }
 
     def replacementKong(position: Position, replacement: Tile, kong: Kong): GameState = {
-      copy(walls = walls.replacementDraw()).
+      log(copy(walls = walls.replacementDraw()).
         updatePosition(position){h =>
           h.copy(tiles = h.tiles :+ replacement, combinations = h.combinations :+ kong)
-        }
+        })
     }
 
     def replacementMahjong(position: Position, replacement: Tile): GameState = {
       // TODO: check valid move
-      this
+      log(this)
     }
 
     def discardMahjong(position: Position, replacement: Tile): GameState = {
       // TODO: check valid move
-      this
+      log(this)
     }
 
     def meldedChow(position: Position, claim: Tile, chow: Chow, discard: Tile): GameState = {
-      updatePosition(position){ h =>
+      log(updatePosition(position){ h =>
         h.copy(
           tiles = h.tiles.filterNot(_ == discard) :+ claim,
           combinations = h.combinations :+ chow
         )
-      }
+      })
     }
 
     def meldedPung(position: Position, claim: Tile, pung: Pung, discard: Tile): GameState = {
-      updatePosition(position){ h =>
+      log(updatePosition(position){ h =>
         h.copy(
           tiles = h.tiles.filterNot(_ == discard) :+ claim,
           combinations = h.combinations :+ pung
         )
-      }
+      })
     }
 
     def bigMeldedKong(position: Position, claim: Tile, kong: Kong): GameState = {
-      updatePosition(position){ h =>
+      log(updatePosition(position){ h =>
         h.copy(
           tiles = h.tiles :+ claim,
           combinations = h.combinations :+ kong
         )
-      }
+      })
     }
 
     def nextDrawTile: Tile = {
@@ -373,8 +374,13 @@ $south
 
   object GameState {
 
+    def log(state: GameState): GameState = {
+      Logger.log(state)
+      state
+    }
+
     def apply(shuffledTiles: List[Tile], diceRoll: Int): GameState = {
-      GameState(Walls(shuffledTiles, diceRoll), None, East, Hand(East), Hand(South), Hand(West), Hand(North))
+      log(GameState(Walls(shuffledTiles, diceRoll), None, East, Hand(East), Hand(South), Hand(West), Hand(North)))
     }
 
   }

@@ -2,6 +2,7 @@ package org.skyluc.mahjongsim.runtime
 
 import akka.actor._
 import org.skyluc.mahjongsim.model.BaseModel._
+import org.skyluc.mahjongsim.log.Logger
 
 class RecorderActor extends Actor {
 
@@ -35,7 +36,7 @@ class RecorderActor extends Actor {
   }
 
   private def log(move: String): Unit = {
-    println(s"------------ $move")
+    Logger.logRecorder(s"------------ $move")
   }
 
 }

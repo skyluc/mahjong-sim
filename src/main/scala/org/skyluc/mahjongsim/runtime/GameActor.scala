@@ -35,7 +35,7 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
       become(dealAll(GameState(shuffledTileSet, d1 + d2 + d3)))
   }
 
-  def dealAll(state: GameState): Receive = debug(state) {
+  def dealAll(state: GameState): Receive = {
     deal4(state, PlayerEast, 12)
   }
 
@@ -77,13 +77,13 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
       )
   }
 
-  def startPlay(state: GameState): Receive = debug(state) {
+  def startPlay(state: GameState): Receive = {
     val draw = state.nextDrawTile
     PlayerEast.actor ! CommModel.DrawTile(draw)
     waitForDrawResponse(state, PlayerEast, draw)
   }
 
-  def nextDraw(state: GameState, player: Player): Receive = debug(state) {
+  def nextDraw(state: GameState, player: Player): Receive = {
     if (state.moreDraw) {
       val draw = state.nextDrawTile
       val nextPlayer = player.nextPlayer
@@ -91,10 +91,7 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
       waitForDrawResponse(state, nextPlayer, draw)
     } else {
       self ! Done
-      debug(state) {
-        case Nil =>
-          // should not reach here
-      }
+      noMoreDraw(state)
     }
   }
 
@@ -106,13 +103,11 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
       recorder ! RecorderActor.SimpleConcealedKong(player.position, draw, kong)
       become(replacement(state.drawKong(player.position, draw, kong), player))
     case CommModel.DrawMahjong =>
-      println(s"Mahjong ${player.position} +$draw")
       recorder ! RecorderActor.DrawMahjong(player.position, draw)
-      self ! Done
-      become(mahjong(state.drawMahjong(player.position, draw)))
+      become(mahjong(state.drawMahjong(player.position, draw), player, draw))
   }
 
-  def replacement(state: GameState, player: Player): Receive = debug(state) {
+  def replacement(state: GameState, player: Player): Receive = {
     // TODO: check end of game. Can you declare kong with no more tiles ?
     val replacement = state.nextReplacementTile
     player.actor ! CommModel.ReplacementTile(replacement)
@@ -128,12 +123,10 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
       become(replacement(state.replacementKong(player.position, draw, kong), player))
     case CommModel.ReplacementMahjong =>
       recorder ! RecorderActor.ReplacementMahjong(player.position, draw)
-      println(s"Mahjong ${player.position} +$draw")
-      become(mahjong(state.replacementMahjong(player.position, draw)))
-      self ! Done
+      become(mahjong(state.replacementMahjong(player.position, draw), player, draw))
   }
 
-  def proposeDiscarded(state: GameState, player: Player, discard: Tile): Receive = debug(state) {
+  def proposeDiscarded(state: GameState, player: Player, discard: Tile): Receive = {
     player.nextPlayer.actor ! CommModel.Discarded(true, discard)
     player.nextPlayer.nextPlayer.actor ! CommModel.Discarded(false, discard)
     player.nextPlayer.nextPlayer.nextPlayer.actor ! CommModel.Discarded(false, discard)
@@ -166,7 +159,7 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
           player.actor ! CommModel.ClaimAccepted
           ordered.tail.foreach(_.player.actor ! CommModel.ClaimRefused)
           recorder ! RecorderActor.DiscardMahjong(player.position, discard)
-          mahjong(state.discardMahjong(player.position, discard))
+          mahjong(state.discardMahjong(player.position, discard), player, discard)
         case MeldedChow(player, chow) =>
           player.actor ! CommModel.ClaimAccepted
           ordered.tail.foreach(_.player.actor ! CommModel.ClaimRefused)
@@ -198,19 +191,18 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
       become(proposeDiscarded(state.meldedPung(player.position, claim, pung, discard), player, discard))
   }
 
-  def mahjong(state: GameState): Receive = debug(state) {
-    case Nil =>
-      // should not reach here
-  }
-
-  private def debug(state: GameState)(r: Receive): Receive = {
-    println(state) 
-    r orElse {
+  def mahjong(state: GameState, player: Player, lastTile: Tile): Receive = {
+    self ! Done
+    val r: Receive = {
       case Done =>
         system.terminate()
-      case o =>
-        println(s"BAD!!!!!! - $o")
     }
+    r
+  }
+  
+  def noMoreDraw(state: GameState): Receive = {
+    case Done =>
+      system.terminate()
   }
 
 }
