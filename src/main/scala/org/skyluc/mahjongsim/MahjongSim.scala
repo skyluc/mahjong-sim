@@ -4,6 +4,7 @@ import model.BaseModel._
 import model.CommModel._ // likely should not be needed
 
 import akka.actor.{ActorSystem, Props}
+import akka.pattern.ask
 
 object MahjongSim {
 
@@ -14,24 +15,22 @@ object MahjongSim {
 
     val system = ActorSystem("majhong")
 
-    val player1 = system.actorOf(runtime.PlayerActor.props(East))
-    val player2 = system.actorOf(runtime.PlayerActor.props(South))
-    val player3 = system.actorOf(runtime.PlayerActor.props(West))
-    val player4 = system.actorOf(runtime.PlayerActor.props(North))
-
-    val recorder = system.actorOf(runtime.RecorderActor.props)
-
-    val game = system.actorOf(runtime.GameActor.props(player1, player2, player3, player4, recorder))
-
-    game ! Start(shuffledTileSet, rng.nextInt(6), rng.nextInt(6), rng.nextInt(6))
-
-    val lock = system.whenTerminated
+    val recorderManager = system.actorOf(runtime.RecorderManagerActor.props())
+    val gameManager = system.actorOf(runtime.GameManagerActor.props(recorderManager))
 
     import scala.concurrent._
     import scala.concurrent.duration._
+    import akka.util.Timeout
+
+    implicit val timeout: Timeout = 2.seconds
+
+    val future = (gameManager ? runtime.GameManagerActor.Run(100)).mapTo[runtime.GameManagerActor.Result]
 
     try {
-      Await.ready(lock, 2.seconds)
+      val result = Await.result(future, 2.seconds)
+      println(result)
+      Thread.sleep(100)
+      system.terminate
     } catch {
       case e: Exception =>
         println("Timed out")

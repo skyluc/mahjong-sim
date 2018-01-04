@@ -33,6 +33,9 @@ class RecorderActor extends Actor {
       log(s"MC   ${position.key} $claim $chow $discard")
     case DiscardMahjong(position, draw) =>
       log(s"DM   ${position.key} $draw")
+    case GameDone =>
+      log(s"Game done")
+      self ! PoisonPill
   }
 
   private def log(move: String): Unit = {
@@ -56,6 +59,8 @@ object RecorderActor {
   case class DrawMahjong(position: Position, draw: Tile)
   case class ReplacementMahjong(position: Position, draw: Tile)
   case class DiscardMahjong(position: Position, draw: Tile)
+
+  case object GameDone
 
   def props: Props = Props(classOf[RecorderActor])
 }

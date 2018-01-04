@@ -5,8 +5,8 @@ import org.skyluc.mahjongsim.runtime.PlayerActor.PlayerView
 
 object Logger {
   final val GAME_LOGS = false
-  final val PLAYER_LOGS = true
-  final val RECORDER_LOGS = true
+  final val PLAYER_LOGS = false
+  final val RECORDER_LOGS = false
 
   def log(state: GameState): Unit = {
     if (GAME_LOGS)

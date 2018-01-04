@@ -29,4 +29,6 @@ object CommModel {
   case object ClaimAccepted
   case object ClaimRefused
 
+  case class GameFinished(isMahjong: Boolean)
+
 }

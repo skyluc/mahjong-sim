@@ -90,7 +90,6 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
       nextPlayer.actor ! CommModel.DrawTile(draw)
       waitForDrawResponse(state, nextPlayer, draw)
     } else {
-      self ! Done
       noMoreDraw(state)
     }
   }
@@ -195,14 +194,18 @@ class GameActor(pEast: ActorRef, pSouth: ActorRef, pWest: ActorRef, pNorth: Acto
     self ! Done
     val r: Receive = {
       case Done =>
-        system.terminate()
+        parent ! CommModel.GameFinished(true)
     }
     r
   }
   
   def noMoreDraw(state: GameState): Receive = {
-    case Done =>
-      system.terminate()
+    self ! Done
+    val r: Receive = {
+      case Done =>
+        parent ! CommModel.GameFinished(false)
+    }
+    r
   }
 
 }
@@ -217,6 +220,8 @@ object GameActor {
   case class Deal1(player: Player, count: Int)
   case object Play
   case object Done
+
+  
 
   sealed trait DiscardResponse {
     def player: Player
